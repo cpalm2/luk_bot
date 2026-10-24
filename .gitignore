@@ -147,3 +147,13 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# luk_bot local state
+__pycache__/
+*.pyc
+paper_state.pkl
+live_journal.json
+backtest_*.csv
+*_setup.png
+*_chart.png
+synthetic_data/
