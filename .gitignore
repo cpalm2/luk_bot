@@ -157,3 +157,5 @@ backtest_*.csv
 *_setup.png
 *_chart.png
 synthetic_data/
+backtest_report.txt
+backtest_equity.png

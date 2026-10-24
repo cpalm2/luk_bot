@@ -74,6 +74,29 @@ def cmd_backtest(args, cfg):
     res["equity"].to_csv("backtest_equity.csv")
     print("wrote backtest_trades.csv, backtest_fills.csv, backtest_equity.csv")
 
+    eq = res["equity"]
+    if args.benchmark and len(eq) and not args.csv_dir:
+        b = fetch_yf([args.benchmark], period=args.period).get(args.benchmark)
+        if b is not None:
+            bc = b["close"].reindex(eq.index).ffill().dropna()
+            bench = args.capital * bc / bc.iloc[0]
+            bdd = float((bench / bench.cummax() - 1).min())
+            yrs = (eq.index[-1] - eq.index[0]).days / 365.25
+            cagr = lambda s: (float(s.iloc[-1]) / args.capital) ** (1 / yrs) - 1
+            print(f"\n{'':12}{'bot':>12}{args.benchmark + ' hold':>12}")
+            print(f"{'return':12}{eq.iloc[-1] / args.capital - 1:>12.1%}{bench.iloc[-1] / args.capital - 1:>12.1%}")
+            print(f"{'CAGR':12}{cagr(eq):>12.1%}{cagr(bench):>12.1%}")
+            print(f"{'max DD':12}{res['stats']['max_drawdown']:>12.1%}{bdd:>12.1%}")
+            import matplotlib
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+            fig, ax = plt.subplots(figsize=(11, 5))
+            ax.plot(eq.index, eq.to_numpy(), label="luk_bot")
+            ax.plot(bench.index, bench.to_numpy(), label=f"{args.benchmark} buy & hold")
+            ax.set_title(f"Equity, ${args.capital:,.0f} start"); ax.legend(); ax.grid(alpha=0.3)
+            fig.tight_layout(); fig.savefig("backtest_equity.png", dpi=110)
+            print("wrote backtest_equity.png")
+
 
 def cmd_run(args, cfg):
     data = _data(args)
@@ -152,6 +175,7 @@ def main():
     p.add_argument("--charts", action="store_true")
     p.add_argument("--out")
     p.add_argument("--start")
+    p.add_argument("--benchmark", default="QQQ", help="buy-and-hold comparison ticker ('' to skip)")
     p.add_argument("--quiet", action="store_true")
     p.add_argument("--state", default="paper_state.pkl")
     p.add_argument("--live", action="store_true")
