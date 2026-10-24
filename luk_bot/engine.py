@@ -135,7 +135,8 @@ class Engine:
     # ---------- one day ----------
     def step(self, state: EngineState, date: pd.Timestamp, data: dict[str, pd.DataFrame]):
         """`data` holds full history; only bars up to `date` are used."""
-        hist = {s: df.loc[:date] for s, df in data.items()}
+        # last ~300 bars is plenty for 6M ranks, 50 EMA, pivots, gaps and AVWAPs
+        hist = {s: df.loc[:date].iloc[-300:] for s, df in data.items()}
         hist = {s: df for s, df in hist.items() if len(df) and df.index[-1] == date}
         bars = {s: df.iloc[-1] for s, df in hist.items()}
         closes = {s: float(b["close"]) for s, b in bars.items()}
